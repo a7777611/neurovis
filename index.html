@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroVis — 神经网络结构可视化实验室</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <span>NeuroVis</span>
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-view="builder">
+                    <i class="fas fa-cubes"></i> 网络构建
+                </button>
+                <button class="nav-tab" data-view="visualization">
+                    <i class="fas fa-eye"></i> 可视化
+                </button>
+                <button class="nav-tab" data-view="training">
+                    <i class="fas fa-chart-line"></i> 训练监控
+                </button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary" id="loadTemplate">
+                <i class="fas fa-layer-group"></i> 加载模板
+            </button>
+            <button class="btn btn-primary" id="startTraining">
+                <i class="fas fa-play"></i> 开始训练
+            </button>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 左侧组件面板 -->
+        <aside class="sidebar" id="componentPanel">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-puzzle-piece"></i> 网络组件</h3>
+            </div>
+            <div class="component-list">
+                <!-- 输入层 -->
+                <div class="component-group">
+                    <h4>输入层</h4>
+                    <div class="component-item" draggable="true" data-type="input">
+                        <i class="fas fa-image"></i>
+                        <span>输入图像</span>
+                    </div>
+                </div>
+
+                <!-- 卷积层 -->
+                <div class="component-group">
+                    <h4>卷积层</h4>
+                    <div class="component-item" draggable="true" data-type="conv2d">
+                        <i class="fas fa-square"></i>
+                        <span>Conv2D</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="conv3d">
+                        <i class="fas fa-cube"></i>
+                        <span>Conv3D</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="depthwise_conv">
+                        <i class="fas fa-th-large"></i>
+                        <span>深度可分离卷积</span>
+                    </div>
+                </div>
+
+                <!-- 池化层 -->
+                <div class="component-group">
+                    <h4>池化层</h4>
+                    <div class="component-item" draggable="true" data-type="maxpool">
+                        <i class="fas fa-border-all"></i>
+                        <span>MaxPool</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="avgpool">
+                        <i class="fas fa-th"></i>
+                        <span>AvgPool</span>
+                    </div>
+                </div>
+
+                <!-- 激活函数 -->
+                <div class="component-group">
+                    <h4>激活函数</h4>
+                    <div class="component-item" draggable="true" data-type="relu">
+                        <i class="fas fa-chart-area"></i>
+                        <span>ReLU</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="sigmoid">
+                        <i class="fas fa-wave-square"></i>
+                        <span>Sigmoid</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="softmax">
+                        <i class="fas fa-shapes"></i>
+                        <span>Softmax</span>
+                    </div>
+                </div>
+
+                <!-- 全连接层 -->
+                <div class="component-group">
+                    <h4>全连接层</h4>
+                    <div class="component-item" draggable="true" data-type="fc">
+                        <i class="fas fa-link"></i>
+                        <span>全连接层</span>
+                    </div>
+                    <div class="component-item" draggable="true" data-type="dropout">
+                        <i class="fas fa-random"></i>
+                        <span>Dropout</span>
+                    </div>
+                </div>
+
+                <!-- 归一化 -->
+                <div class="component-group">
+                    <h4>归一化</h4>
+                    <div class="component-item" draggable="true" data-type="batchnorm">
+                        <i class="fas fa-adjust"></i>
+                        <span>BatchNorm</span>
+                    </div>
+                </div>
+
+                <!-- 输出层 -->
+                <div class="component-group">
+                    <h4>输出层</h4>
+                    <div class="component-item" draggable="true" data-type="output">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>输出层</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中间画布区域 -->
+        <section class="canvas-area" id="canvasArea">
+            <div class="canvas-header">
+                <h3><i class="fas fa-project-diagram"></i> 网络结构画布</h3>
+                <div class="canvas-actions">
+                    <button class="btn btn-sm" id="clearCanvas" title="清空画布">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn btn-sm" id="undoBtn" title="撤销">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button class="btn btn-sm" id="redoBtn" title="重做">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="btn btn-sm" id="zoomIn" title="放大">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-sm" id="zoomOut" title="缩小">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button class="btn btn-sm" id="resetView" title="重置视图">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="canvas-container" id="canvasContainer">
+                <svg id="networkCanvas" width="100%" height="100%">
+                    <!-- 网格背景 -->
+                    <defs>
+                        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)"></rect>
+                    
+                    <!-- 连接线图层 -->
+                    <g id="connectionsLayer"></g>
+                    
+                    <!-- 节点图层 -->
+                    <g id="nodesLayer"></g>
+                </svg>
+                
+                <!-- 拖拽提示 -->
+                <div class="canvas-placeholder" id="canvasPlaceholder">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <p>从左侧拖拽组件到此处构建网络</p>
+                    <p class="hint">或点击"加载模板"快速开始</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧属性面板 -->
+        <aside class="properties-panel" id="propertiesPanel">
+            <div class="panel-header">
+                <h3><i class="fas fa-sliders-h"></i> 属性设置</h3>
+            </div>
+            <div class="panel-content" id="propertiesContent">
+                <div class="empty-state">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <p>选择节点以编辑属性</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 底部训练控制面板 -->
+    <footer class="training-panel" id="trainingPanel">
+        <div class="training-header">
+            <h3><i class="fas fa-cogs"></i> 训练配置</h3>
+            <button class="btn btn-sm btn-toggle" id="toggleTrainingPanel">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+        <div class="training-content">
+            <!-- 超参数设置 -->
+            <div class="param-group">
+                <h4>超参数</h4>
+                <div class="param-item">
+                    <label>学习率</label>
+                    <input type="number" id="learningRate" value="0.001" step="0.0001" min="0.0001" max="1">
+                </div>
+                <div class="param-item">
+                    <label>批次大小</label>
+                    <input type="number" id="batchSize" value="32" step="8" min="1" max="512">
+                </div>
+                <div class="param-item">
+                    <label>训练轮数</label>
+                    <input type="number" id="epochs" value="50" step="1" min="1" max="1000">
+                </div>
+                <div class="param-item">
+                    <label>优化器</label>
+                    <select id="optimizer">
+                        <option value="adam">Adam</option>
+                        <option value="sgd">SGD</option>
+                        <option value="rmsprop">RMSprop</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 训练控制 -->
+            <div class="control-group">
+                <button class="btn btn-success" id="trainBtn">
+                    <i class="fas fa-play"></i> 开始训练
+                </button>
+                <button class="btn btn-warning" id="pauseBtn" disabled>
+                    <i class="fas fa-pause"></i> 暂停
+                </button>
+                <button class="btn btn-danger" id="stopBtn" disabled>
+                    <i class="fas fa-stop"></i> 停止
+                </button>
+            </div>
+
+            <!-- 训练进度 -->
+            <div class="progress-group">
+                <div class="progress-info">
+                    <span>轮次: <span id="currentEpoch">0</span>/<span id="totalEpochs">50</span></span>
+                    <span>进度: <span id="progressPercent">0</span>%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- 实时指标 -->
+            <div class="metrics-group">
+                <div class="metric">
+                    <label>损失 (Loss)</label>
+                    <span id="currentLoss">-</span>
+                </div>
+                <div class="metric">
+                    <label>准确率 (Accuracy)</label>
+                    <span id="currentAcc">-</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 可视化弹窗 -->
+    <div class="modal" id="visualizationModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye"></i> 网络可视化</h3>
+                <button class="btn-close" id="closeVisualization">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="viz-tabs">
+                    <button class="viz-tab active" data-viz="dataflow">数据流动画</button>
+                    <button class="viz-tab" data-viz="heatmap">特征图热力图</button>
+                    <button class="viz-tab" data-viz="tensor">张量维度</button>
+                </div>
+                <div class="viz-content">
+                    <canvas id="dataflowCanvas"></canvas>
+                    <canvas id="heatmapCanvas"></canvas>
+                    <div id="tensorView"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模板选择弹窗 -->
+    <div class="modal" id="templateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-layer-group"></i> 选择预置模板</h3>
+                <button class="btn-close" id="closeTemplate">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-grid">
+                    <div class="template-card" data-template="lenet">
+                        <div class="template-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h4>LeNet-5</h4>
+                        <p>经典手写数字识别网络</p>
+                    </div>
+                    <div class="template-card" data-template="alexnet">
+                        <div class="template-icon">
+                            <i class="fas fa-th-large"></i>
+                        </div>
+                        <h4>AlexNet</h4>
+                        <p>ImageNet 冠军网络</p>
+                    </div>
+                    <div class="template-card" data-template="vgg16">
+                        <div class="template-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <h4>VGG16</h4>
+                        <p>深层卷积网络代表</p>
+                    </div>
+                    <div class="template-card" data-template="resnet18">
+                        <div class="template-icon">
+                            <i class="fas fa-code-branch"></i>
+                        </div>
+                        <h4>ResNet18</h4>
+                        <p>残差网络连接</p>
+                    </div>
+                    <div class="template-card" data-template="resnet50">
+                        <div class="template-icon">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                        <h4>ResNet50</h4>
+                        <p>深度残差网络</p>
+                    </div>
+                    <div class="template-card" data-template="efficientnet">
+                        <div class="template-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h4>EfficientNetV2</h4>
+                        <p>高效网络架构</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 训练图表弹窗 -->
+    <div class="modal" id="trainingChartModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-chart-line"></i> 训练过程监控</h3>
+                <button class="btn-close" id="closeTrainingChart">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="chart-container">
+                    <canvas id="lossChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="accChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本加载 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
